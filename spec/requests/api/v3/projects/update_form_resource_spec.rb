@@ -50,7 +50,19 @@ describe ::API::V3::Projects::UpdateFormAPI, content_type: :json do
   let(:list_custom_field) do
     FactoryBot.create(:list_project_custom_field)
   end
+  let(:viable_parent_project) do
+    FactoryBot.create(:project).tap do |p|
+      FactoryBot.create(:member,
+                        project: p,
+                        principal: current_user,
+                        roles: [parent_project_role])
+    end
+  end
+  let(:parent_project_role) do
+    FactoryBot.create(:role, permissions: parent_project_permissions)
+  end
   let(:permissions) { [:edit_project] }
+  let(:parent_project_permissions) { [:add_subprojects] }
   let(:path) { api_v3_paths.project_form(project.id) }
   let(:params) do
     {
@@ -118,6 +130,36 @@ describe ::API::V3::Projects::UpdateFormAPI, content_type: :json do
 
         expect(project.reload.name)
           .to eql name_before
+      end
+    end
+
+    context 'with a viable parent project' do
+      context 'with a correct parameter' do
+        let(:params) do
+          {
+            "_links": {
+              "parent": {
+                "href": api_v3_paths.project(viable_parent_project.id)
+              }
+            }
+          }
+        end
+
+        it 'sets the project in the payload' do
+          expect(subject.body)
+            .to be_json_eql(api_v3_paths.project(viable_parent_project.id).to_json)
+            .at_path('_embedded/payload/_links/parent/href')
+        end
+
+        it 'links to the allowed parents in the schema' do
+          expect(subject.body)
+            .to have_json_size(api_v3_paths.projects_available_parents)
+            .at_path('_embedded/schema/parent/_links/allowedValues/href')
+
+          expect(subject.body)
+            .to be_json_eql(api_v3_paths.project(viable_parent_project.id).to_json)
+            .at_path('_embedded/schema/parent/_links/allowedValues/0/href')
+        end
       end
     end
 
