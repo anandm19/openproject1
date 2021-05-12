@@ -71,7 +71,7 @@
     "bourbon": "~5.1.0",
     "bundle-loader": "^0.5.4",
     "cdk-drag-scroll": "^0.0.2",
-    "chart.js": "2.7.3",
+    "chart.js": "2.9.4",
     "clean-webpack-plugin": "^1.0.0",
     "codemirror": "^5.42.0",
     "contra": "^1.9.4",
